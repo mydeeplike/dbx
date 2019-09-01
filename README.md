@@ -256,3 +256,5 @@ func main() {
 
 
 [中文文档](README_cn.md)
+
+Project address migrated to [https://github.com/xiuno/dbx](https://github.com/xiuno/dbx)
