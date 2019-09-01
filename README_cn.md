@@ -3,13 +3,10 @@
 什么是 dbx ? 简而言之就是：
 > **dbx = DB + Cache**
 
-它是一个支持对全表数据进行透明缓存的 golang database 库，在内存足够大的情况下，不再需要 Memcached, Redis 等缓存服务。
+它是一个支持对全表数据进行透明缓存的 Golang DB 库，在内存足够大的情况下，不再需要 Memcached, Redis 等缓存服务。
 而且读取缓存的速度相当之快，本机测试 qps 达到:  350万+/秒，可以有效的简化应用端业务逻辑代码。
-它支持 MySQL/Sqlite3，支持结构体自由组合嵌套，仅仅依赖以下类库：
-```bash
-go get "github.com/go-sql-driver/mysql"
-go get "github.com/mattn/go-sqlite3"
-```
+它支持 MySQL/Sqlite3，支持结构体自由组合嵌套。
+它的实现原理为自动扫描表结构，确定主键和自增列，并且通过主键按照行来缓存数据，按照行透明管理 cache，上层只需要按照普通的 ORM 风格 API 操作即可。
 
 # 支持缓存，高性能读取 KV 缓存全表数据
 经过本机简单的测试（小数据下），直接查询 Sqlite3 速度可以达到 3万+/秒，开启缓存后达到恐怖的 350万+/秒。
@@ -44,15 +41,18 @@ type User struct {
 db, err = dbx.Open("mysql", "root@tcp(localhost)/test?parseTime=true&charset=utf8")
 
 // 插入一条
-db.Table("user").Insert(u1)
+db.Table("user").Insert(user)
 
 // 查询一条
-db.Table("user").WherePK(1).One(u2)
+db.Table("user").Where("uid=?", 1).One(&user)
 
-// 更新一条
-db.Table("user").Update(u2)
+// 通过主健查询一条
+db.Table("user").WherePK(1).One(&user)
 
-// 删除一条
+// 通过主健更新一条
+db.Table("user").Update(&user)
+
+// 通过主健删除一条
 db.Table("user").WherePK(1).Delete()
 
 // 获取多条
@@ -153,7 +153,7 @@ func main() {
 	dbx.Check(err)
 	fmt.Printf("%+v\n", u2)
 	
-    // 读取一条，判断是否存在
+	// 读取一条，判断是否存在
 	err = db.Table("user").WherePK(1).One(u2)
 	dbx.Check(err)
 	if dbx.NoRows(err) {

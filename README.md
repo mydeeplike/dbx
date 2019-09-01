@@ -8,11 +8,10 @@ It is a golang database library that supports transparent caching of all table d
 
 Moreover, the speed of reading cache is quite fast, and the local test QPS reaches 3.5 million + / seconds, which can effectively simplify the application-side business logic code.
 
-It supports MySQL/Sqlite3 and free nesting of structures, relying only on the following libraries:
-```bash
-go get "github.com/go-sql-driver/mysql"
-go get "github.com/mattn/go-sqlite3"
-```
+It supports MySQL/Sqlite3 and free nesting of structures.
+
+Its implementation principle is to automatically scan the table structure, determine the primary key and self-adding column, and cache data according to the row by the primary key, manage the cache transparently according to the row, the upper layer only needs to operate according to the ordinary ORM style API.
+
 
 
 # Supporting caching, high performance read KV cached full table data
@@ -54,12 +53,15 @@ db, err = dbx.Open("mysql", "root@tcp(localhost)/test?parseTime=true&charset=utf
 db.Table("user").Insert(u1)
 
 // find one
+db.Table("user").Where("uid=?", 1).One(&user)
+
+// find one by primary key
 db.Table("user").WherePK(1).One(u2)
 
-// update one
+// update one by primary key
 db.Table("user").Update(u2)
 
-// delete one
+// delete one by primary key
 db.Table("user").WherePK(1).Delete()
 
 // find multi
